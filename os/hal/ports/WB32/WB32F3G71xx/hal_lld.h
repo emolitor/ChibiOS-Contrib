@@ -34,8 +34,8 @@
 
 #include "wb32_registry.h"
 #include "wb32_tim.h"
-#include "wb32_dma.h"
 #include "wb32_exti.h"
+#include "hal_dma_lld.h"
 
 /*===========================================================================*/
 /* Driver constants.                                                         */

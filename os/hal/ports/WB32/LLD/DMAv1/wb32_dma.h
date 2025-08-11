@@ -615,7 +615,7 @@ typedef struct {
 #define dmaStreamSetMode(dmastp, mode) {                                                              \
     switch ((uint32_t)(mode) & WB32_DMA_CHCFG_DIR_MASK) {                                             \
         case WB32_DMA_CHCFG_DIR_M2M: /* M2M */                                                        \
-          (dmastp)->dmac->Ch[(dmastp)->channel].CFGL = WB32_DMAC_TRF_TFC_M2MD |                       \
+          (dmastp)->dmac->Ch[(dmastp)->channel].CTLL = WB32_DMAC_TRF_TFC_M2MD |                       \
                                                        WB32_DMAC_SRC_MASTER_IF_AHB |                  \
                                                        WB32_DMAC_DST_MASTER_IF_AHB |                  \
                                                        (((mode) & WB32_DMA_CHCFG_PSIZE_MASK) >> 5) |  \

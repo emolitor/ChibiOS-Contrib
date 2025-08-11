@@ -242,7 +242,7 @@ typedef struct {
   uint16_t                  SPI_CPHA;                                       \
   /* SPI In order to avoid TX FIFO underflow or */                          \
   /* RX FIFO overflow, SPI_BaudRatePrescaler needs to bigger. */            \
-  uint16_t                  SPI_BaudRatePrescaler;                          \
+  uint16_t                  SPI_BaudRatePrescaler                           \
 
 /*===========================================================================*/
 /* External declarations.                                                    */
