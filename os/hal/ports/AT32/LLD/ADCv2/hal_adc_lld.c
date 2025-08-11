@@ -212,7 +212,11 @@ void adc_lld_start(ADCDriver *adcp) {
 
     /* This is a common register but apparently it requires that at least one
        of the ADCs is clocked in order to allow writing, see bug 3575297.*/
+#if defined (AT32F435_437)
+    ADC_COMMON->CCTRL |= ADC_CCTRL_ITSRVEN;
+#else
     adcp->adc->CTRL2 = ADC_CTRL2_ITSRVEN;
+#endif
     ADC_COMMON->CCTRL = ((AT32_ADC_ADCDIV - 2) << 16);
 
     /* ADC initial setup, starting the analog part here in order to reduce
@@ -324,8 +328,11 @@ void adc_lld_stop_conversion(ADCDriver *adcp) {
  * @note    This is an AT32-only functionality.
  */
 void adcAT32EnableITSRVEN(void) {
-
+#if defined (AT32F435_437)
+  ADC_COMMON->CCTRL |= ADC_CCTRL_ITSRVEN;
+#else
   ADC1->CTRL2 |= ADC_CTRL2_ITSRVEN;
+#endif
 }
 
 /**
@@ -335,8 +342,11 @@ void adcAT32EnableITSRVEN(void) {
  * @note    This is an AT32-only functionality.
  */
 void adcAT32DisableITSRVEN(void) {
-
+#if defined (AT32F435_437)
+  ADC_COMMON->CCTRL &= ~ADC_CCTRL_ITSRVEN;
+#else
   ADC1->CTRL2 &= ~ADC_CTRL2_ITSRVEN;
+#endif
 }
 
 #endif /* HAL_USE_ADC */

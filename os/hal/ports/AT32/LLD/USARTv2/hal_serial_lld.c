@@ -201,7 +201,9 @@ static void usart_init(SerialDriver *sdp,
   u->CTRL1 = config->ctrl1 | USART_CTRL1_UEN | USART_CTRL1_PERRIEN |
                              USART_CTRL1_RDBFIEN | USART_CTRL1_TEN |
                              USART_CTRL1_REN;
+  #if !defined (AT32F435_437)
   u->IFC = 0xFFFFFFFFU;
+  #endif
 
   /* Deciding mask to be applied on the data register on receive, this is
      required in order to mask out the parity bit.*/
@@ -731,8 +733,9 @@ void sd_lld_serve_interrupt(SerialDriver *sdp) {
 
   /* Reading and clearing status.*/
   sts = u->STS;
+#if !defined (AT32F435_437)
   u->IFC = sts;
-
+#endif
   /* Error condition detection.*/
   if (sts & (USART_STS_ROERR | USART_STS_NERR | USART_STS_FERR | USART_STS_PERR))
     set_error(sdp, sts);

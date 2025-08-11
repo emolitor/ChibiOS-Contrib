@@ -163,7 +163,9 @@ static void usart_stop(UARTDriver *uartp) {
 static void usart_start(UARTDriver *uartp) {
   uint32_t baudr;
   uint32_t ctrl1;
+#if !defined (AT32F435_437)
   const uint32_t tmo = uartp->config->timeout;
+#endif
   USART_TypeDef *u = uartp->usart;
 
   /* Defensive programming, starting from a clean state.*/
@@ -174,9 +176,10 @@ static void usart_start(UARTDriver *uartp) {
                      uartp->config->speed);
   u->BAUDR = baudr;
 
+ #if !defined (AT32F435_437)
   /* Resetting eventual pending status flags.*/
   u->IFC = 0xFFFFFFFFU;
-
+ #endif
   /* Note that some bits are enforced because required for correct driver
      operations.*/
   u->CTRL2 = uartp->config->ctrl2 | USART_CTRL2_BFIEN;
@@ -189,12 +192,13 @@ static void usart_start(UARTDriver *uartp) {
   u->CTRL1 = uartp->config->ctrl1 | ctrl1;
 
   /* Set receive timeout and checks if it is really applied.*/
+#if !defined (AT32F435_437)
   if (tmo > 0) {
     osalDbgAssert(tmo <= USART_RTOV_RTOV, "Timeout overflow");
     u->RTOV = tmo;
     osalDbgAssert(tmo == u->RTOV, "Timeout feature unsupported in this UART");
   }
-
+#endif
   /* Starting the receiver idle loop.*/
   uart_enter_rx_idle_loop(uartp);
 }
@@ -941,7 +945,9 @@ void uart_lld_serve_interrupt(UARTDriver *uartp) {
 
   /* Reading and clearing status.*/
   sts = u->STS;
+  #if !defined (AT32F435_437)
   u->IFC = sts;
+  #endif
 
   if (sts & (USART_STS_BFF  | USART_STS_ROERR | USART_STS_NERR |
              USART_STS_FERR | USART_STS_PERR)) {

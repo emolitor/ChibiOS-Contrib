@@ -195,7 +195,9 @@ __STATIC_INLINE void usart_init(SIODriver *siop) {
   u->BAUDR  = baudr;
 
   /* Starting operations.*/
+  #if !defined (AT32F435_437)
   u->IFC    = u->STS;
+  #endif
   u->CTRL1 |= USART_CTRL1_UEN | USART_CTRL1_TEN | USART_CTRL1_REN;
 }
 
@@ -457,10 +459,10 @@ sioevents_t sio_lld_get_and_clear_errors(SIODriver *siop) {
            some scientist decided to use different positions for some
            of them.*/
   sts = siop->usart->STS & SIO_LLD_ISR_RX_ERRORS;
-
+#if !defined (AT32F435_437)
   /* Clearing captured events.*/
   siop->usart->IFC = sts;
-
+#endif
   /* Status flags cleared, now the error-related interrupts can be
      enabled again.*/
   usart_enable_rx_errors_irq(siop);
@@ -493,9 +495,10 @@ sioevents_t sio_lld_get_and_clear_events(SIODriver *siop) {
                             USART_STS_IDLEF       |
                             USART_STS_TDBE        |
                             USART_STS_TDC);
-
+#if !defined (AT32F435_437)
   /* Clearing captured events.*/
   siop->usart->IFC = sts;
+#endif
 
   /* Status flags cleared, now the RX-related interrupts can be
      enabled again.*/
