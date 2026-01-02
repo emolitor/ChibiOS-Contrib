@@ -284,7 +284,7 @@ void pwm_lld_start(PWMDriver *pwmp) {
   }
 
   /* Counter clock divider */
-  halfreq_t sys_clk = halClockGetPointX(clk_sys);
+  halfreq_t sys_clk = halClockGetPointX(RP_CLK_SYS);
   halfreq_t pwm_freq_min = sys_clk / 256;
 
   osalDbgAssert(pwmp->config->frequency >= pwm_freq_min, "RP2040 pwm counter frequency has a minimal value of the system clock divided by 256");

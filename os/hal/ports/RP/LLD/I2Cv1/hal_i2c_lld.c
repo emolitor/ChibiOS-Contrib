@@ -32,6 +32,11 @@
 /* Driver local definitions.                                                 */
 /*===========================================================================*/
 
+/* MIN macro for ChibiOS 8.0 compatibility */
+#ifndef MIN
+#define MIN(a, b) (((a) < (b)) ? (a) : (b))
+#endif
+
 /*===========================================================================*/
 /* Driver exported variables.                                                */
 /*===========================================================================*/
@@ -176,7 +181,7 @@ void i2c_lld_handle_errors(I2CDriver *i2cp) {
 static void i2c_lld_setup_frequency(I2CDriver *i2cp) {
   I2C_TypeDef *dp = i2cp->i2c;
 
-  halfreq_t freq_in = halClockGetPointX(clk_sys);
+  halfreq_t freq_in = halClockGetPointX(RP_CLK_SYS);
 
   const uint32_t baudrate = i2cp->config->baudrate;
   const uint32_t period = (freq_in + baudrate / 2U) / baudrate;
