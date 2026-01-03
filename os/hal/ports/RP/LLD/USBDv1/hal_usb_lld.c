@@ -33,6 +33,32 @@
 #include "mcuconf.h"
 
 /*===========================================================================*/
+/* Device memory safe copy.                                                  */
+/*===========================================================================*/
+
+#if defined(__ARM_ARCH_8M_MAIN__)
+/**
+ * @brief   Copy memory using only byte accesses.
+ * @note    USB DPRAM on RP2350 (Cortex-M33) is in Device memory which requires
+ *          strict alignment.
+ */
+static inline void usb_dpram_copy(void *dst, const void *src, size_t n) {
+  volatile uint8_t *d = (volatile uint8_t *)dst;
+  const volatile uint8_t *s = (const volatile uint8_t *)src;
+  while (n-- > 0) {
+    *d++ = *s++;
+  }
+}
+#else
+/**
+ * @brief   Copy memory to/from USB DPRAM.
+ * @note    On RP2040 (Cortex-M0+), USB DPRAM is normal memory and standard
+ *          memcpy can be used safely.
+ */
+#define usb_dpram_copy(dst, src, n) memcpy(dst, src, n)
+#endif
+
+/*===========================================================================*/
 /* Driver local definitions.                                                 */
 /*===========================================================================*/
 
@@ -235,7 +261,7 @@ static uint32_t usb_prepare_in_ep_buffer(USBDriver *usbp, usbep_t ep, uint8_t bu
 
     /* Copy data into hardware buffer */
     buff = (uint8_t*)iesp->hw_buf + (buffer_index == 0 ? 0 : iesp->buf_size);
-    memcpy((void *)buff, (void *)iesp->txbuf, buf_len);
+    usb_dpram_copy((void *)buff, (void *)iesp->txbuf, buf_len);
     iesp->txbuf += buf_len;
 
     buf_ctrl |= USB_BUFFER_BUFFER0_FULL |
@@ -322,7 +348,7 @@ static void usb_serve_endpoint(USBDriver *usbp, usbep_t ep, bool is_in) {
     n = BUF_CTRL(ep).OUT & USB_BUFFER_BUFFER0_TRANS_LENGTH_Msk;
 
     /* Copy received data into user buffer */
-    memcpy((void *)oesp->rxbuf, (void *)oesp->hw_buf, n);
+    usb_dpram_copy((void *)oesp->rxbuf, (void *)oesp->hw_buf, n);
     oesp->rxbuf += n;
     oesp->rxcnt += n;
     oesp->rxsize -= n;
@@ -719,7 +745,7 @@ void usb_lld_read_setup(USBDriver *usbp, usbep_t ep, uint8_t *buf) {
   (void)usbp;
   (void)ep;
   /* Copy data from hardware buffer to user buffer */
-  memcpy((void *)buf, (void *)USB_DPSRAM->SETUPPACKET, 8);
+  usb_dpram_copy((void *)buf, (void *)USB_DPSRAM->SETUPPACKET, 8);
 }
 
 /**
