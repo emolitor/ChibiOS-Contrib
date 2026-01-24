@@ -213,6 +213,9 @@ typedef uint32_t gptfreq_t;
 
 /**
  * @brief   GPT counter type.
+ * @note    WB32 hardware timers have 20-bit counters. Maximum value is
+ *          WB32_TIM_CNT_MAX (0xFFFFF = 1,048,575). Values above this will
+ *          be truncated by hardware.
  */
 typedef uint32_t gptcnt_t;
 

@@ -92,12 +92,17 @@
 #define WB32_HAS_USB1_DMA                      TRUE
 #define WB32_HAS_USB1_WKUP                     TRUE
 
-/* TIM attributes */
+/* TIM attributes
+ * Note: WB32 timers have 20-bit counters (CNT[19:0]), not 16-bit or 32-bit.
+ * The IS_32BITS = FALSE flag is correct as they are not full 32-bit timers.
+ * Max counter value: 0xFFFFF (1,048,575).
+ * See Reference Manual sections 15.6.11 (TIM1) and 16.6.9 (TIM2-4). */
 #define WB32_HAS_TIM                           TRUE
 #define WB32_HAS_TIM1                          TRUE
 #define WB32_HAS_TIM2                          TRUE
 #define WB32_HAS_TIM3                          TRUE
 #define WB32_HAS_TIM4                          TRUE
+#define WB32_TIM_CNT_MAX                       0xFFFFFU
 
 #define WB32_TIM1_IS_32BITS                    FALSE
 #define WB32_TIM1_CHANNELS                     4

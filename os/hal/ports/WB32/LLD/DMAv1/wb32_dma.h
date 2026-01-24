@@ -291,7 +291,7 @@
   * @{
   */
 #define WB32_DMAC_DST_AUTO_RELOAD_EN                         (0x1U << 31)
-#define WB32_DMAC_DST_AUTO_RELOAD_DIS                        (0x0U << 30)
+#define WB32_DMAC_DST_AUTO_RELOAD_DIS                        (0x0U << 31)
 /**
   * @}
   */
@@ -580,12 +580,12 @@ typedef struct {
  * @post    After use the stream can be released using @p dmaStreamRelease().
  *
  * @param[in] dmastp    pointer to a wb32_dma_stream_t structure
- * @param[in] size      value to be written in the CTLH register   Size must be less than 511
+ * @param[in] size      value to be written in the CTLH register   Size must be less than 4096
  *
  * @special
  */
 #define dmaStreamSetTransactionSize(dmastp, size) {                          \
-    (dmastp)->dmac->Ch[(dmastp)->channel].CTLH = (uint32_t)((size) & 0x1FF); \
+    (dmastp)->dmac->Ch[(dmastp)->channel].CTLH = (uint32_t)((size) & 0xFFF); \
   }
 
 /**
