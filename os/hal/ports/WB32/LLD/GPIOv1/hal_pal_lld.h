@@ -58,6 +58,9 @@
 #define PAL_WB32_OTYPE_PUSHPULL                (0U << 2U)
 #define PAL_WB32_OTYPE_OPENDRAIN               (1U << 2U)
 
+/* NOTE: WB32 OSPEEDR polarity is inverted from STM32:
+ * WB32: 0 = HIGH speed, 1 = LOW speed
+ * STM32: 0 = LOW speed, 3 = VERY HIGH speed */
 #define PAL_WB32_OSPEED_MASK                   (3U << 3U)
 #define PAL_WB32_OSPEED_LOW                    (1U << 3U)
 #define PAL_WB32_OSPEED_HIGH                   (0U << 3U)

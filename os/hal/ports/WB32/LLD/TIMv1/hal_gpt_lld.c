@@ -428,6 +428,9 @@ void gpt_lld_serve_interrupt(GPTDriver *gptp) {
 
   sr = gptp->tim->SR;
   sr &= gptp->tim->DIER & WB32_TIM_DIER_IRQ_MASK;
+  /* WARNING: WB32 timer SR may be rw (not rc_w0 like STM32). If so,
+   * writing ~sr can SET unrelated flag bits. Use SR = 0 if issues arise.
+   * See ws2812_custom.c for the safe pattern. */
   gptp->tim->SR = ~sr;
   if ((sr & WB32_TIM_SR_UIF) != 0) {
     _gpt_isr_invoke_cb(gptp);
