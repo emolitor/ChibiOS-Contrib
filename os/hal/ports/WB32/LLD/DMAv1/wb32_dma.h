@@ -403,6 +403,12 @@
 /** @defgroup DMAC configuration parameters for use simple config. 
   * @{
   */
+/**
+ * @brief   Maximum DMA block transfer size (9-bit hardware limit).
+ * @note    Reference manual incorrectly documents BLOCK_TS as 12 bits.
+ *          Hardware testing confirms only bits [8:0] are writable.
+ */
+#define WB32_DMA_MAX_BLOCK_TS                                511U
 #define WB32_DMA_CHCFG_SIZE_MASK                             (0x1FFU)
 #define WB32_DMA_CHCFG_EN                                    (0x01U << 0)
 #define WB32_DMA_CHCFG_TCIE                                  (0x01U << 1)
@@ -580,12 +586,16 @@ typedef struct {
  * @post    After use the stream can be released using @p dmaStreamRelease().
  *
  * @param[in] dmastp    pointer to a wb32_dma_stream_t structure
- * @param[in] size      value to be written in the CTLH register   Size must be less than 4096
+ * @param[in] size      value to be written in the CTLH register.
+ *                       Size must be <= 511 (hardware limit is 9 bits, not 12 as documented).
+ *                       NOTE: Reference manual incorrectly states BLOCK_TS is 12 bits [11:0].
+ *                       Hardware testing confirms only bits [8:0] are writable (max 511).
  *
  * @special
  */
-#define dmaStreamSetTransactionSize(dmastp, size) {                          \
-    (dmastp)->dmac->Ch[(dmastp)->channel].CTLH = (uint32_t)((size) & 0xFFF); \
+#define dmaStreamSetTransactionSize(dmastp, size) {                                      \
+    osalDbgAssert((size) <= WB32_DMA_MAX_BLOCK_TS, "DMA BLOCK_TS max 511");              \
+    (dmastp)->dmac->Ch[(dmastp)->channel].CTLH = (uint32_t)((size) & WB32_DMA_CHCFG_SIZE_MASK); \
   }
 
 /**
@@ -613,9 +623,10 @@ typedef struct {
  * @special
  */
 #define dmaStreamSetMode(dmastp, mode) {                                                              \
+    uint32_t _cfgl_hs = 0U;                                                                           \
     switch ((uint32_t)(mode) & WB32_DMA_CHCFG_DIR_MASK) {                                             \
         case WB32_DMA_CHCFG_DIR_M2M: /* M2M */                                                        \
-          (dmastp)->dmac->Ch[(dmastp)->channel].CFGL = WB32_DMAC_TRF_TFC_M2MD |                       \
+          (dmastp)->dmac->Ch[(dmastp)->channel].CTLL = WB32_DMAC_TRF_TFC_M2MD |                       \
                                                        WB32_DMAC_SRC_MASTER_IF_AHB |                  \
                                                        WB32_DMAC_DST_MASTER_IF_AHB |                  \
                                                        (((mode) & WB32_DMA_CHCFG_PSIZE_MASK) >> 5) |  \
@@ -623,6 +634,7 @@ typedef struct {
                                                        ((!((mode) & WB32_DMA_CHCFG_PINC)) << 10) |    \
                                                        ((!((mode) & WB32_DMA_CHCFG_MINC)) << 8);      \
           (dmastp)->dmac->Ch[(dmastp)->channel].CFGH = (1U << 2);                                     \
+          _cfgl_hs = WB32_DMAC_SRC_HIFS_SW | WB32_DMAC_DST_HIFS_SW;                                  \
           break;                                                                                      \
         case WB32_DMA_CHCFG_DIR_M2P: /* M2P */                                                        \
           (dmastp)->dmac->Ch[(dmastp)->channel].CTLL = WB32_DMAC_TRF_TFC_M2PD |                       \
@@ -634,6 +646,7 @@ typedef struct {
                                                        ((!((mode) & WB32_DMA_CHCFG_PINC)) << 8);      \
           (dmastp)->dmac->Ch[(dmastp)->channel].CFGH = (((mode) & WB32_DMA_CHCFG_HWHIF_MASK) >> 5) |  \
                                                        (1U << 2);                                     \
+          _cfgl_hs = WB32_DMAC_SRC_HIFS_SW;                                                           \
           break;                                                                                      \
         case WB32_DMA_CHCFG_DIR_P2M: /* P2M */                                                        \
           (dmastp)->dmac->Ch[(dmastp)->channel].CTLL = WB32_DMAC_TRF_TFC_P2MD |                       \
@@ -645,11 +658,13 @@ typedef struct {
                                                        ((!((mode) & WB32_DMA_CHCFG_MINC)) << 8);      \
           (dmastp)->dmac->Ch[(dmastp)->channel].CFGH = (((mode) & WB32_DMA_CHCFG_HWHIF_MASK) >> 9) |  \
                                                        (1U << 2);                                     \
+          _cfgl_hs = WB32_DMAC_DST_HIFS_SW;                                                           \
           break;                                                                                      \
     }                                                                                                 \
     (dmastp)->dmac->Ch[(dmastp)->channel].CFGL = (((mode) & WB32_DMA_CHCFG_PL_MASK) >> 8) |           \
                                                  (((mode) & WB32_DMA_CHCFG_CIRC) << 24) |             \
-                                                 (((mode) & WB32_DMA_CHCFG_CIRC) << 25);              \
+                                                 (((mode) & WB32_DMA_CHCFG_CIRC) << 25) |             \
+                                                 _cfgl_hs;                                            \
     if ((mode) & (WB32_DMA_CHCFG_TCIE)) {                                                             \
       (dmastp)->dmac->Ch[(dmastp)->channel].CTLL |= WB32_DMAC_INTERRUPT_EN;                           \
       dmaStreamEnableInterrupt(dmastp, WB32_DMAC_IT_TFR);                                             \
@@ -857,10 +872,10 @@ typedef struct {
  *
  * @param[in] dmastp    pointer to a wb32_dma_stream_t structure
  */
-#define dmaWaitCompletion(dmastp) {                                         \
-    while (((dmastp)->dmac->Ch[(dmastp)->channel].CTLH & 0x00000FFFU) > 0U) \
-      ;                                                                     \
-    dmaStreamDisable(dmastp);                                               \
+#define dmaWaitCompletion(dmastp) {                                                      \
+    while (((dmastp)->dmac->Ch[(dmastp)->channel].CTLH & WB32_DMA_CHCFG_SIZE_MASK) > 0U) \
+      ;                                                                                  \
+    dmaStreamDisable(dmastp);                                                            \
   }
 /** @} */
 
